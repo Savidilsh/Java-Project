@@ -43,28 +43,29 @@ public class RoleInitializer {
         return args -> {
             logger.info("Initializing roles and admin account...");
 
-            Role userRole = createRoleIfNotExists("ROLE_USER", "Default user role");
-            Role adminRole = createRoleIfNotExists("ROLE_ADMIN", "Administrator with full access");
+            try {
+                Role userRole = createRoleIfNotExists("ROLE_USER", "Default user role");
+                Role adminRole = createRoleIfNotExists("ROLE_ADMIN", "Administrator with full access");
 
-            createAdminUserIfNotExists(adminRole);
+                createAdminUserIfNotExists(adminRole);
 
-            logger.info("Role and admin initialization complete.");
+                logger.info("Role and admin initialization complete.");
+            } catch (Exception e) {
+                logger.error("Initialization failed: {}", e.getMessage(), e);
+                throw e;
+            }
         };
     }
 
     private Role createRoleIfNotExists(String name, String description) {
-        Optional<Role> roleOpt = roleRepository.findByName(name).stream().findFirst();
-
-        if (roleOpt.isEmpty()) {
+        return roleRepository.findByName(name).stream().findFirst().orElseGet(() -> {
             logger.info("Creating role: {}", name);
             Role newRole = Role.builder()
                     .name(name)
                     .description(description)
                     .build();
             return roleRepository.save(newRole);
-        }
-
-        return roleOpt.get();
+        });
     }
 
     private void createAdminUserIfNotExists(Role adminRole) {
@@ -88,6 +89,10 @@ public class RoleInitializer {
                     .build();
 
             userRoleRepository.save(userRole);
+
+            logger.info("Admin user created and assigned ROLE_ADMIN.");
+        } else {
+            logger.info("Admin user already exists: {}", adminEmail);
         }
     }
 }

@@ -11,23 +11,24 @@ import java.sql.Timestamp;
 @AllArgsConstructor
 @Builder
 @Entity
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
 @Table(name = "audit_logs")
 public class AuditLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ToString.Include
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "actor_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "actor_id", nullable = false)
     @ToString.Exclude
     private User user;
 
-    @Column(name = "action_type", nullable = false)
+    @Column(name = "action_type", nullable = false, length = 100)
     private String actionType;
 
-    @Column(name = "ip_address")
+    @Column(name = "ip_address", length = 45) // IPv6 max length is 45 characters
     private String ipAddress;
 
     @Column(nullable = false)

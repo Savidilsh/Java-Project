@@ -9,22 +9,23 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Entity
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
 @Table(name = "oauth_providers")
 public class OauthProvider {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ToString.Include
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @ToString.Exclude
     private User user;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String provider;
 
-    @Column(name = "external_user_id", nullable = false)
+    @Column(name = "external_user_id", nullable = false, length = 100)
     private String externalUserId;
 }

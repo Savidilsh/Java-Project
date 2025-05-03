@@ -1,12 +1,10 @@
 package com.codejam.codex.authzen.constants;
 
-import javax.annotation.Generated;
-
 /**
  * Centralized definition of all REST API endpoint paths.
  * Helps to avoid hardcoding and makes route changes easy to manage.
  */
-@Generated("ApiEndpoint")
+@javax.annotation.processing.Generated("ApiEndpoint")
 public final class ApiEndpoint {
 
     // Base path

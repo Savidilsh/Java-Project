@@ -79,4 +79,32 @@ public class AuthzenResponse<T> {
     public void markUnsuccessful() {
         this.status = UNSUCCESSFUL;
     }
+
+    /**
+     * Static method to create a failure response.
+     *
+     * @param message The failure message to return.
+     * @return A new AuthzenResponse with failure status and message.
+     */
+    public static AuthzenResponse failure(String message) {
+        AuthzenResponse response = new AuthzenResponse();
+        response.status = UNSUCCESSFUL;
+        response.message = message;
+        return response;
+    }
+
+    /**
+     * Static method to create a success response.
+     *
+     * @param result The result data.
+     * @param message The success message to return.
+     * @return A new AuthzenResponse with success status, results, and message.
+     */
+    public static <T> AuthzenResponse<T> success(T result, String message) {
+        AuthzenResponse<T> response = new AuthzenResponse<>();
+        response.status = SUCCESSFUL;
+        response.message = message;
+        response.addResult(result);
+        return response;
+    }
 }

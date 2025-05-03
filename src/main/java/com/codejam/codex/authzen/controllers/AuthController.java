@@ -34,13 +34,13 @@ public class AuthController {
     public ResponseEntity<AuthzenResponse<UserResponse>> register(@RequestBody RegisterRequest request) {
         try {
             UserResponse userResponse = authEndpoint.registerUser(request);
-            return ResponseEntity.ok(new AuthzenResponse<>(userResponse, true, "User registered successfully"));
+            return ResponseEntity.ok(AuthzenResponse.success(userResponse, "User registered successfully"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(new AuthzenResponse<>(null, false, "Invalid registration data: " + e.getMessage()));
+                    .body(AuthzenResponse.failure("Invalid registration data: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new AuthzenResponse<>(null, false, "Registration failed: " + e.getMessage()));
+                    .body(AuthzenResponse.failure("Registration failed: " + e.getMessage()));
         }
     }
 
@@ -52,12 +52,12 @@ public class AuthController {
         try {
             TokenResponse token = authEndpoint.authenticateUser(request);
             return Optional.ofNullable(token)
-                    .map(t -> ResponseEntity.ok(new AuthzenResponse<>(t, true, "User logged in successfully")))
+                    .map(t -> ResponseEntity.ok(AuthzenResponse.success(t, "User logged in successfully")))
                     .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(new AuthzenResponse<>(null, false, "Invalid credentials")));
+                            .body(AuthzenResponse.failure("Invalid credentials")));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new AuthzenResponse<>(null, false, "Login error: " + e.getMessage()));
+                    .body(AuthzenResponse.failure("Login error: " + e.getMessage()));
         }
     }
 
@@ -69,12 +69,12 @@ public class AuthController {
         try {
             TokenResponse oauthToken = authEndpoint.authenticateOAuth(request);
             return Optional.ofNullable(oauthToken)
-                    .map(t -> ResponseEntity.ok(new AuthzenResponse<>(t, true, "User logged in via OAuth successfully")))
+                    .map(t -> ResponseEntity.ok(AuthzenResponse.success(t, "User logged in via OAuth successfully")))
                     .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(new AuthzenResponse<>(null, false, "OAuth login failed")));
+                            .body(AuthzenResponse.failure("OAuth login failed")));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new AuthzenResponse<>(null, false, "OAuth login error: " + e.getMessage()));
+                    .body(AuthzenResponse.failure("OAuth login error: " + e.getMessage()));
         }
     }
 
@@ -86,13 +86,13 @@ public class AuthController {
         try {
             boolean sent = authEndpoint.sendPasswordResetEmail(request);
             if (sent) {
-                return ResponseEntity.ok(new AuthzenResponse<>(null, true, "Password reset email sent"));
+                return ResponseEntity.ok(AuthzenResponse.success(null, "Password reset email sent"));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new AuthzenResponse<>(null, false, "Failed to send reset email"));
+                    .body(AuthzenResponse.failure("Failed to send reset email"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new AuthzenResponse<>(null, false, "Reset request failed: " + e.getMessage()));
+                    .body(AuthzenResponse.failure("Reset request failed: " + e.getMessage()));
         }
     }
 
@@ -104,13 +104,13 @@ public class AuthController {
         try {
             boolean success = authEndpoint.resetUserPassword(request);
             if (success) {
-                return ResponseEntity.ok(new AuthzenResponse<>(null, true, "Password reset successfully"));
+                return ResponseEntity.ok(AuthzenResponse.success(null, "Password reset successfully"));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new AuthzenResponse<>(null, false, "Password reset failed"));
+                    .body(AuthzenResponse.failure("Password reset failed"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new AuthzenResponse<>(null, false, "Reset error: " + e.getMessage()));
+                    .body(AuthzenResponse.failure("Reset error: " + e.getMessage()));
         }
     }
 
@@ -121,13 +121,13 @@ public class AuthController {
     public ResponseEntity<AuthzenResponse<TokenResponse>> refreshToken(@RequestBody RefreshTokenRequest request) {
         try {
             TokenResponse refreshed = authEndpoint.refreshToken(request.getRefreshToken());
-            return ResponseEntity.ok(new AuthzenResponse<>(refreshed, true, "Token refreshed successfully"));
+            return ResponseEntity.ok(AuthzenResponse.success(refreshed, "Token refreshed successfully"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new AuthzenResponse<>(null, false, e.getMessage()));
+                    .body(AuthzenResponse.failure(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new AuthzenResponse<>(null, false, "Refresh token error: " + e.getMessage()));
+                    .body(AuthzenResponse.failure("Refresh token error: " + e.getMessage()));
         }
     }
 }

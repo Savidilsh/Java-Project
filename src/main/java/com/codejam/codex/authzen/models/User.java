@@ -1,14 +1,11 @@
 package com.codejam.codex.authzen.models;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -42,10 +39,9 @@ public class User {
     @Column(nullable = false, name = "created_at")
     private Timestamp createdAt;
 
-    @OneToMany(mappedBy = "user", cascade = {CascadeType.ALL}, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<RefreshToken> refreshTokens = new ArrayList<>();
-
 
     public void addRefreshToken(RefreshToken refreshToken) {
         refreshTokens.add(refreshToken);
@@ -57,25 +53,23 @@ public class User {
         refreshToken.setUser(null);
     }
 
-    @OneToMany(mappedBy = "user", cascade = {CascadeType.ALL}, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<EmailToken> emailTokens = new ArrayList<>();
 
-
-    public void addEmailTokens(EmailToken emailToken) {
+    public void addEmailToken(EmailToken emailToken) {
         emailTokens.add(emailToken);
         emailToken.setUser(this);
     }
 
     public void removeEmailToken(EmailToken emailToken) {
-        refreshTokens.remove(emailToken);
+        emailTokens.remove(emailToken);
         emailToken.setUser(null);
     }
 
-    @OneToMany(mappedBy = "user", cascade = {CascadeType.ALL}, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OauthProvider> oauthProviders = new ArrayList<>();
-
 
     public void addOauthProvider(OauthProvider oauthProvider) {
         oauthProviders.add(oauthProvider);
@@ -87,10 +81,9 @@ public class User {
         oauthProvider.setUser(null);
     }
 
-    @OneToMany(mappedBy = "user", cascade = {CascadeType.ALL}, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<AuditLog> auditLogs = new ArrayList<>();
-
 
     public void addAuditLog(AuditLog auditLog) {
         auditLogs.add(auditLog);
@@ -98,10 +91,30 @@ public class User {
     }
 
     public void removeAuditLog(AuditLog auditLog) {
-        oauthProviders.remove(auditLog);
+        auditLogs.remove(auditLog);
         auditLog.setUser(null);
     }
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<UserRole> userRoles = new HashSet<>();
+
+    public void addUserRole(UserRole userRole) {
+        userRoles.add(userRole);
+        userRole.setUser(this);
+    }
+
+    public void removeUserRole(UserRole userRole) {
+        userRoles.remove(userRole);
+        userRole.setUser(null);
+    }
+
+    /**
+     * Convenience method to extract role names as strings
+     */
+    public Set<String> getRoles() {
+        return userRoles.stream()
+                .map(userRole -> userRole.getRole().getName())
+                .collect(Collectors.toSet());
+    }
 }

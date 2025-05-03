@@ -11,23 +11,24 @@ import java.sql.Timestamp;
 @AllArgsConstructor
 @Builder
 @Entity
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
 @Table(name = "email_tokens")
 public class EmailToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ToString.Include
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @ToString.Exclude
     private User user;
 
     @Column(nullable = false)
     private String purpose;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String token;
 
     @Column(name = "expires_at", nullable = false)

@@ -64,16 +64,18 @@ public class AdminController {
     public ResponseEntity<AuthzenResponse<List<UserResponse>>> getAllUsers(HttpServletRequest request) {
         String username = verifyAdmin(request);
         List<UserResponse> users = adminEndpoint.getAllUsers(username);
-        return ResponseEntity.ok(new AuthzenResponse<>(users, true, "Users listed successfully."));
+        return ResponseEntity.ok(AuthzenResponse.success(users, "Users listed successfully."));
     }
 
     @GetMapping(ApiEndpoint.ADMIN_USERS)
     @Secured("ROLE_ADMIN")
     @PreAuthorize("hasAuthority('VIEW_USER')")
-    public ResponseEntity<AuthzenResponse<UserResponse>> getUserDetails(@PathVariable("id") Long userId, HttpServletRequest request) {
+    public ResponseEntity<AuthzenResponse<UserResponse>> getUserDetails(
+            @PathVariable("id") Long userId,
+            HttpServletRequest request) {
         verifyAdmin(request);
         UserResponse userResponse = adminEndpoint.getUserById(userId);
-        return ResponseEntity.ok(new AuthzenResponse<>(userResponse, true, "User details retrieved successfully."));
+        return ResponseEntity.ok(AuthzenResponse.success(userResponse, "User details retrieved successfully."));
     }
 
     @PutMapping(ApiEndpoint.ADMIN_USER_ROLES)
@@ -85,7 +87,7 @@ public class AdminController {
             HttpServletRequest request) {
         String username = verifyAdmin(request);
         UpdateUserResponse updated = adminEndpoint.updateUserRoles(userId, roleUpdateRequest, username);
-        return ResponseEntity.ok(new AuthzenResponse<>(updated, true, "User roles updated successfully."));
+        return ResponseEntity.ok(AuthzenResponse.success(updated, "User roles updated successfully."));
     }
 
     @PostMapping(ApiEndpoint.ADMIN_ROLES)
@@ -96,7 +98,7 @@ public class AdminController {
             HttpServletRequest request) {
         String username = verifyAdmin(request);
         String created = adminEndpoint.createRole(roleRequest, username);
-        return ResponseEntity.ok(new AuthzenResponse<>(null, true, created));
+        return ResponseEntity.ok(AuthzenResponse.success(created, "Role created successfully."));
     }
 
     @GetMapping(ApiEndpoint.ADMIN_AUDIT_LOGS)
@@ -105,7 +107,7 @@ public class AdminController {
     public ResponseEntity<AuthzenResponse<List<AuditLogResponse>>> getAuditLogs(HttpServletRequest request) {
         String username = verifyAdmin(request);
         List<AuditLogResponse> auditLogs = adminEndpoint.getAuditLogs(username);
-        return ResponseEntity.ok(new AuthzenResponse<>(auditLogs, true, "Audit logs listed successfully."));
+        return ResponseEntity.ok(AuthzenResponse.success(auditLogs, "Audit logs listed successfully."));
     }
 
     @PostMapping(ApiEndpoint.ADMIN_DELEGATE)
@@ -116,6 +118,6 @@ public class AdminController {
             HttpServletRequest request) {
         String username = verifyAdmin(request);
         String message = adminEndpoint.delegatePermissions(delegateRequest, username);
-        return ResponseEntity.ok(new AuthzenResponse<>(null, true, message));
+        return ResponseEntity.ok(AuthzenResponse.success(message, "Permissions delegated successfully."));
     }
 }

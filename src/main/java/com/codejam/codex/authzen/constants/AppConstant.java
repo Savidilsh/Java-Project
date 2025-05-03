@@ -1,6 +1,6 @@
 package com.codejam.codex.authzen.constants;
 
-import javax.annotation.Generated;
+import javax.annotation.processing.Generated;
 
 /**
  * Application-wide string constants for core role or context identifiers.
