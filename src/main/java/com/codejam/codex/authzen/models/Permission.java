@@ -1,31 +1,26 @@
 package com.codejam.codex.authzen.models;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.HashSet;
-import java.util.Set;
-
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
 @AllArgsConstructor
-@Builder
-@Entity
-@ToString
-@Table(name = "permissions")
+@NoArgsConstructor
+// models/Permission.java
 public class Permission {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
     private String name;
-
-    @Column
     private String description;
 
-    @OneToMany(mappedBy = "permission", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<RolePermission> rolePermissions = new HashSet<>();
+    public static Permission of(String name, String description) {
+        Permission p = new Permission();
+        p.name = name;
+        p.description = description;
+        return p;
+    }
+
+    // Getters
+    public String getName() { return name; }
+    public String getDescription() { return description; }
 }
+

@@ -26,5 +26,5 @@ public class RolePermission {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "permission_id", nullable = false)
     @ToString.Exclude
-    private Permission permission;
+    private Permission permission;  // ✅ Make sure this is "Permission", not "PermissionEntity"
 }

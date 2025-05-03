@@ -15,16 +15,25 @@ import java.util.Map;
 public class HealthController {
 
     @GetMapping(ApiEndpoint.HEALTH)
-    public ResponseEntity<AuthzenResponse<Map<String,Object>>> checkHealth() {
-        Map<String,Object> health = new HashMap<>();
-        health.put("status",      "UP");
+    public ResponseEntity<AuthzenResponse<Map<String, Object>>> checkHealth() {
+        Map<String, Object> health = new HashMap<>();
+        health.put("status", "UP");
         health.put("application", "AuthZen API");
-        health.put("version",     "1.0.0");
-        health.put("timestamp",   Instant.now().toString());
-        long up = ManagementFactory.getRuntimeMXBean().getUptime();
-        health.put("uptime", String.format("%02dh:%02dm:%02ds",
-                up/3600000, (up/60000)%60, (up/1000)%60));
-        AuthzenResponse<Map<String,Object>> r = new AuthzenResponse<>(health, true, "Health check successful");
-        return ResponseEntity.ok(r);
+        health.put("version", "1.0.0");
+        health.put("timestamp", Instant.now().toString());
+
+        long uptimeMillis = ManagementFactory.getRuntimeMXBean().getUptime();
+        String uptime = String.format(
+            "%02dh:%02dm:%02ds",
+            uptimeMillis / 3_600_000,
+            (uptimeMillis / 60_000) % 60,
+            (uptimeMillis / 1_000) % 60
+        );
+        health.put("uptime", uptime);
+
+        // Use the static helper to produce a typed, successful response
+        AuthzenResponse<Map<String, Object>> response =
+            AuthzenResponse.success(health, "Health check successful");
+        return ResponseEntity.ok(response);
     }
 }
