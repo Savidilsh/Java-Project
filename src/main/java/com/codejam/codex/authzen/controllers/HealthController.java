@@ -15,27 +15,16 @@ import java.util.Map;
 public class HealthController {
 
     @GetMapping(ApiEndpoint.HEALTH)
-    public ResponseEntity<AuthzenResponse<Map<String, Object>>> checkHealth() {
-        Map<String, Object> healthStatus = new HashMap<>();
-
-        healthStatus.put("status", "UP");
-        healthStatus.put("application", "AuthZen API");
-        healthStatus.put("version", "1.0.0");
-        healthStatus.put("timestamp", Instant.now().toString());
-        healthStatus.put("uptime", getUptime());
-
-        AuthzenResponse<Map<String, Object>> response = new AuthzenResponse<>(healthStatus);
-        response.setMessage("Health check successful");
-
-        return ResponseEntity.ok(response);
-    }
-
-    private String getUptime() {
-        long uptimeMillis = ManagementFactory.getRuntimeMXBean().getUptime();
-        long seconds = uptimeMillis / 1000 % 60;
-        long minutes = uptimeMillis / (1000 * 60) % 60;
-        long hours = uptimeMillis / (1000 * 60 * 60);
-
-        return String.format("%02dh:%02dm:%02ds", hours, minutes, seconds);
+    public ResponseEntity<AuthzenResponse<Map<String,Object>>> checkHealth() {
+        Map<String,Object> health = new HashMap<>();
+        health.put("status",      "UP");
+        health.put("application", "AuthZen API");
+        health.put("version",     "1.0.0");
+        health.put("timestamp",   Instant.now().toString());
+        long up = ManagementFactory.getRuntimeMXBean().getUptime();
+        health.put("uptime", String.format("%02dh:%02dm:%02ds",
+                up/3600000, (up/60000)%60, (up/1000)%60));
+        AuthzenResponse<Map<String,Object>> r = new AuthzenResponse<>(health, true, "Health check successful");
+        return ResponseEntity.ok(r);
     }
 }

@@ -11,7 +11,6 @@ import com.codejam.codex.authzen.endpoint.AdminEndpoint;
 import com.codejam.codex.authzen.endpoint.AuthEndpoint;
 import com.codejam.codex.authzen.responses.AuthzenResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.annotation.Secured;
@@ -20,10 +19,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Handles administrative endpoints such as user management,
- * role updates, audit logs, and permission delegation.
- */
 @RestController
 @RequestMapping(ApiEndpoint.ADMIN)
 @PreAuthorize("hasRole('ADMIN')")
@@ -32,92 +27,85 @@ public class AdminController {
     private final AdminEndpoint adminEndpoint;
     private final AuthEndpoint authEndpoint;
 
-    @Autowired
     public AdminController(AdminEndpoint adminEndpoint, AuthEndpoint authEndpoint) {
         this.adminEndpoint = adminEndpoint;
-        this.authEndpoint = authEndpoint;
+        this.authEndpoint  = authEndpoint;
     }
 
-    /**
-     * Ensures the request is made by an authenticated admin.
-     *
-     * @param request current HTTP request
-     * @return authenticated admin username
-     */
     private String verifyAdmin(HttpServletRequest request) {
         String username = authEndpoint.getUsername(request);
         if (username == null || !authEndpoint.isAuthenticated(request)) {
-            throw new AccessDeniedException("Unauthorized: Invalid or missing token.");
+            throw new AccessDeniedException("Unauthorized: missing/invalid token");
         }
-
-        UserResponse userResponse = authEndpoint.getUserDetails(username);
-        if (userResponse == null || !userResponse.getRoles().contains("ROLE_ADMIN")) {
-            throw new AccessDeniedException("Forbidden: Insufficient permissions.");
+        UserResponse u = authEndpoint.getUserDetails(username);
+        if (u == null || !u.getRoles().contains("ROLE_ADMIN")) {
+            throw new AccessDeniedException("Forbidden: insufficient permissions");
         }
-
         return username;
     }
 
     @GetMapping(ApiEndpoint.ADMIN_ALL_USERS)
     @Secured("ROLE_ADMIN")
     @PreAuthorize("hasAuthority('VIEW_USER')")
-    public ResponseEntity<AuthzenResponse<List<UserResponse>>> getAllUsers(HttpServletRequest request) {
-        String username = verifyAdmin(request);
-        List<UserResponse> users = adminEndpoint.getAllUsers(username);
-        return ResponseEntity.ok(AuthzenResponse.success(users, "Users listed successfully."));
+    public ResponseEntity<AuthzenResponse<List<UserResponse>>> getAllUsers(HttpServletRequest req) {
+        String who = verifyAdmin(req);
+        List<UserResponse> list = adminEndpoint.getAllUsers(who);
+        return ResponseEntity.ok(AuthzenResponse.success(list, "Users listed successfully."));
     }
 
     @GetMapping(ApiEndpoint.ADMIN_USERS)
     @Secured("ROLE_ADMIN")
     @PreAuthorize("hasAuthority('VIEW_USER')")
     public ResponseEntity<AuthzenResponse<UserResponse>> getUserDetails(
-            @PathVariable("id") Long userId,
-            HttpServletRequest request) {
-        verifyAdmin(request);
-        UserResponse userResponse = adminEndpoint.getUserById(userId);
-        return ResponseEntity.ok(AuthzenResponse.success(userResponse, "User details retrieved successfully."));
+            @PathVariable("id") Long id, HttpServletRequest req) {
+        verifyAdmin(req);
+        UserResponse u = adminEndpoint.getUserById(id);
+        return ResponseEntity.ok(AuthzenResponse.success(u, "User details retrieved successfully."));
     }
 
     @PutMapping(ApiEndpoint.ADMIN_USER_ROLES)
     @Secured("ROLE_ADMIN")
     @PreAuthorize("hasAuthority('UPDATE_USER')")
     public ResponseEntity<AuthzenResponse<UpdateUserResponse>> updateUserRole(
-            @PathVariable("id") Long userId,
-            @RequestBody RoleUpdateRequest roleUpdateRequest,
-            HttpServletRequest request) {
-        String username = verifyAdmin(request);
-        UpdateUserResponse updated = adminEndpoint.updateUserRoles(userId, roleUpdateRequest, username);
-        return ResponseEntity.ok(AuthzenResponse.success(updated, "User roles updated successfully."));
+            @PathVariable("id") Long id,
+            @RequestBody RoleUpdateRequest request,
+            HttpServletRequest httpReq
+    ) {
+        String who = verifyAdmin(httpReq);
+        UpdateUserResponse out = adminEndpoint.updateUserRoles(id, request, who);
+        return ResponseEntity.ok(AuthzenResponse.success(out, "User roles updated successfully."));
     }
 
     @PostMapping(ApiEndpoint.ADMIN_ROLES)
     @Secured("ROLE_ADMIN")
     @PreAuthorize("hasAuthority('CREATE_USER')")
     public ResponseEntity<AuthzenResponse<String>> createRole(
-            @RequestBody RoleRequest roleRequest,
-            HttpServletRequest request) {
-        String username = verifyAdmin(request);
-        String created = adminEndpoint.createRole(roleRequest, username);
-        return ResponseEntity.ok(AuthzenResponse.success(created, "Role created successfully."));
+            @RequestBody RoleRequest request,
+            HttpServletRequest httpReq
+    ) {
+        String who = verifyAdmin(httpReq);
+        String msg = adminEndpoint.createRole(request, who);
+        return ResponseEntity.ok(AuthzenResponse.success(msg, "Role created successfully."));
     }
 
     @GetMapping(ApiEndpoint.ADMIN_AUDIT_LOGS)
     @Secured("ROLE_ADMIN")
-    @PreAuthorize("hasAuthority('VIEW_USER')")
-    public ResponseEntity<AuthzenResponse<List<AuditLogResponse>>> getAuditLogs(HttpServletRequest request) {
-        String username = verifyAdmin(request);
-        List<AuditLogResponse> auditLogs = adminEndpoint.getAuditLogs(username);
-        return ResponseEntity.ok(AuthzenResponse.success(auditLogs, "Audit logs listed successfully."));
+    @PreAuthorize("hasAuthority('VIEW_AUDIT_LOG')")
+    public ResponseEntity<AuthzenResponse<List<AuditLogResponse>>> getAuditLogs(HttpServletRequest req) {
+        String who = verifyAdmin(req);
+        List<AuditLogResponse> logs = adminEndpoint.getAuditLogs(who);
+        return ResponseEntity.ok(AuthzenResponse.success(logs, "Audit logs listed successfully."));
     }
 
     @PostMapping(ApiEndpoint.ADMIN_DELEGATE)
     @Secured("ROLE_ADMIN")
     @PreAuthorize("hasAuthority('UPDATE_USER')")
     public ResponseEntity<AuthzenResponse<String>> delegatePermissions(
-            @RequestBody DelegateRequest delegateRequest,
-            HttpServletRequest request) {
-        String username = verifyAdmin(request);
-        String message = adminEndpoint.delegatePermissions(delegateRequest, username);
-        return ResponseEntity.ok(AuthzenResponse.success(message, "Permissions delegated successfully."));
+            @RequestBody DelegateRequest dr,
+            HttpServletRequest req
+    ) {
+        String who = verifyAdmin(req);
+        String msg = adminEndpoint.delegatePermissions(dr, who);
+        return ResponseEntity.ok(AuthzenResponse.success(msg, "Permissions delegated successfully."));
     }
 }
