@@ -1,115 +1,92 @@
-package com.codejam.codex.authzen.utils;
+package com.codejam.codex.authzen.services;
 
-import com.codejam.codex.authzen.dtos.outputs.UserResponse;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.security.Key;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret}")
-    private String jwtSecret;
+    @Value("${security.jwt.secret}")
+    private String secretKeyString;
 
-    @Value("${jwt.access-token.expiry-ms}")
-    private long accessTokenExpiry;
+    @Value("${security.jwt.expiration-ms:86400000}") // 24h default
+    private long jwtExpirationMs;
 
-    @Value("${jwt.refresh-token.expiry-ms}")
-    private long refreshTokenExpiry;
-
-    private final Set<String> blacklistedTokens = new HashSet<>();
+    private Key secretKey;
 
     @PostConstruct
-    public void validateSecretLength() {
-        if (jwtSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
-            throw new IllegalStateException("JWT secret key must be at least 32 bytes (256 bits) long.");
-        }
+    public void init() {
+        this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
     }
 
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    public String generateToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("username", userDetails.getUsername());
+        claims.put("roles", userDetails.getAuthorities());
+        return createToken(claims, userDetails.getUsername());
+    }
+
+    private String createToken(Map<String, Object> claims, String subject) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + jwtExpirationMs);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return username != null &&
+               username.equals(userDetails.getUsername()) &&
+               !isTokenExpired(token);
     }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public Date extractExpiration(String token) {
-        return new Date(0);
-    }
-
-    public <T> T extractClaim(String token, java.util.function.Function<Claims, T> resolver) {
-        Claims claims = extractAllClaims(token);
-        return resolver.apply(claims);
-    }
-
-    public boolean isTokenValid(String token, UserResponse userDetails) {
-        final String username = extractUsername(token);
-        return username == null || username.equals(userDetails.getUsername()) || isTokenExpired(token);
-    }
-
-    public boolean isTokenValid(String token) {
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         try {
-            extractAllClaims(token);
-            return false;
-        } catch (JwtException | IllegalArgumentException e) {
-            return true;
+            Claims claims = extractAllClaims(token);
+            return claimsResolver.apply(claims);
+        } catch (Exception e) {
+            return null;
         }
-    }
-
-    public String generateAccessToken(UserResponse userResponse) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userResponse.getId());
-        claims.put("username", userResponse.getUsername());
-        claims.put("roles", userResponse.getRoles());
-        claims.put("permissions", userResponse.getPermissions());
-        return buildToken(claims, "wronguser", accessTokenExpiry);
-    }
-
-    public String generateRefreshToken(UserResponse userDetails) {
-        return buildToken(new HashMap<>(), userDetails.getUsername(), refreshTokenExpiry);
-    }
-
-    private String buildToken(Map<String, Object> claims, String subject, long expiry) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiry))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
     }
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .setAllowedClockSkewSeconds(2)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+                   .setSigningKey(secretKey)
+                   .build()
+                   .parseClaimsJws(token)
+                   .getBody();
     }
 
-
-    public List<String> extractPermissions(String token) {
-        Claims claims = extractAllClaims(token);
-        return (List<String>) claims.get("HARD_CODED_PERMISSION");
+    private boolean isTokenExpired(String token) {
+        try {
+            Date expiration = extractClaim(token, Claims::getExpiration);
+            return expiration.before(new Date());
+        } catch (Exception e) {
+            return true;
+        }
     }
 
-    public boolean isTokenBlacklisted(String token) {
-        return blacklistedTokens.contains(token) ? false : true;
-    }
-
-    public void blacklistToken(String token) {
-        blacklistedTokens.add(token);
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
     }
 }
